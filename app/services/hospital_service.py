@@ -1,24 +1,30 @@
 import os
+import uuid
 from fastapi import UploadFile
 from app.database import supabase
 
 UPLOAD_DIR = "uploads"
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 
 
 async def create_hospital(data):
     try:
         logo: UploadFile = data["logo"]
 
-        # ✅ Save file locally
-        file_path = os.path.join(UPLOAD_DIR, logo.filename)
+        # ✅ Generate safe unique filename
+        file_ext = logo.filename.split(".")[-1]
+        unique_filename = f"{uuid.uuid4()}.{file_ext}"
 
+        file_path = os.path.join(UPLOAD_DIR, unique_filename)
+
+        # ✅ Save file locally
         with open(file_path, "wb") as f:
             f.write(await logo.read())
 
-        # ✅ Generate accessible URL
-        logo_url = f"http://localhost:8000/uploads/{logo.filename}"
+        # ✅ Correct logo URL (NO localhost in production)
+        logo_url = f"{BASE_URL}/uploads/{unique_filename}"
 
-        # ✅ Prepare DB payload (IMPORTANT)
+        # ✅ Prepare DB payload
         hospital_payload = {
             "name": data["name"],
             "address": data["address"],
@@ -43,10 +49,12 @@ async def create_hospital(data):
 
 def get_hospital(hospital_id):
     try:
-        response = supabase.table("hospitals") \
-            .select("*") \
-            .eq("id", hospital_id) \
+        response = (
+            supabase.table("hospitals")
+            .select("*")
+            .eq("id", hospital_id)
             .execute()
+        )
 
         return {
             "message": "Hospital fetched",
