@@ -138,6 +138,11 @@ function PrescriptionForm({ hospital }) {
     const downloadPDF = async () => {
         const doc = new jsPDF();
 
+        // 🩺 WATERMARK
+        doc.setTextColor(230);
+        doc.setFontSize(70);
+        doc.text(hospital?.name || "Hospital", 30, 200, { angle: 45 });
+
         // 🔁 Convert image to base64 (FIXED)
         const getBase64FromUrl = async (url) => {
             try {
@@ -302,7 +307,7 @@ function PrescriptionForm({ hospital }) {
 
         doc.setFontSize(10);
         doc.setTextColor(120);
-        doc.text(`/s/ ${form.doctor_name}`, 132, y - 10);
+        doc.text(`${form.doctor_name}`, 132, y - 10);
 
         doc.setFont("Helvetica", "normal");
         doc.setTextColor(0);
@@ -311,11 +316,6 @@ function PrescriptionForm({ hospital }) {
 
         doc.setFontSize(9);
         doc.text(`Reg No: ${form.doctor_registration || "N/A"}`, 132, y + 10);
-
-        // 🩺 WATERMARK
-        doc.setTextColor(230);
-        doc.setFontSize(70);
-        doc.text(hospital?.name || "Hospital", 30, 200, { angle: 45 });
 
         // 💾 SAVE
         doc.save(`${form.patient_name}-${prescriptionId}.pdf`);
