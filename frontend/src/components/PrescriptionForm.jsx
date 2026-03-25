@@ -138,13 +138,13 @@ function PrescriptionForm({ hospital }) {
     const downloadPDF = async () => {
         const doc = new jsPDF();
 
-        // 🔁 Helper: Convert image to base64 safely
+        // 🔁 Convert image to base64 (FIXED)
         const getBase64FromUrl = async (url) => {
             try {
-                const res = await fetch(url, { mode: "cors" });
+                const res = await fetch(url); // ❌ removed cors mode
                 const blob = await res.blob();
 
-                return new Promise((resolve, reject) => {
+                return await new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onloadend = () => resolve(reader.result);
                     reader.onerror = reject;
@@ -154,6 +154,13 @@ function PrescriptionForm({ hospital }) {
                 console.error("Base64 conversion failed:", err);
                 return null;
             }
+        };
+
+        // 🔁 Ensure correct backend URL
+        const getFullLogoUrl = (url) => {
+            if (!url) return null;
+            if (url.startsWith("http")) return url;
+            return `${import.meta.env.VITE_API_URL}${url}`;
         };
 
         let y = 40;
@@ -173,9 +180,10 @@ function PrescriptionForm({ hospital }) {
         doc.text(hospital?.address || "", 10, 22);
         doc.text(hospital?.contact || "", 10, 27);
 
-        // 🖼️ LOGO (Robust)
+        // 🖼️ LOGO (FINAL FIX)
         if (hospital?.logo_url) {
-            const base64Logo = await getBase64FromUrl(hospital.logo_url);
+            const logoUrl = getFullLogoUrl(hospital.logo_url);
+            const base64Logo = await getBase64FromUrl(logoUrl);
 
             if (base64Logo) {
                 try {
@@ -188,6 +196,8 @@ function PrescriptionForm({ hospital }) {
                 } catch (err) {
                     console.error("Logo render failed:", err);
                 }
+            } else {
+                console.warn("Logo not loaded, skipping...");
             }
         }
 
@@ -302,7 +312,7 @@ function PrescriptionForm({ hospital }) {
         doc.setFontSize(9);
         doc.text(`Reg No: ${form.doctor_registration || "N/A"}`, 132, y + 10);
 
-        // 🩺 WATERMARK (LAST so it stays faint)
+        // 🩺 WATERMARK
         doc.setTextColor(230);
         doc.setFontSize(70);
         doc.text(hospital?.name || "Hospital", 30, 200, { angle: 45 });
