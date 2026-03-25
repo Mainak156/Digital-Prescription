@@ -325,7 +325,11 @@ function PrescriptionForm({ hospital }) {
 
                             {hospital.logo_url && (
                                 <img
-                                    src={hospital.logo_url}
+                                    src={
+                                        hospital?.logo_url?.startsWith("http")
+                                            ? hospital.logo_url
+                                            : `${import.meta.env.VITE_API_URL}${hospital.logo_url}`
+                                    }
                                     alt="Hospital Logo"
                                     className="mt-3 h-16 object-contain border rounded mx-auto"
                                 />

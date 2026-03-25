@@ -1,14 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-
 from app.routes.prescription_routes import router as prescription_router
 from app.routes.hospital_routes import router as hospital_router
-
 import os
 
-# Ensure uploads directory exists
+# =========================
+# CONFIG
+# =========================
 UPLOAD_DIR = "uploads"
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app = FastAPI(
@@ -17,23 +19,29 @@ app = FastAPI(
     version="1.1.0"
 )
 
-# ✅ CORS Configuration
+# =========================
+# CORS (FIXED)
+# =========================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "*"
+        "https://digital-prescription-theta.vercel.app"  # your frontend
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ✅ Static File Serving (IMPORTANT for logo display)
+# =========================
+# STATIC FILES (LOGO FIX)
+# =========================
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
-# ✅ Routers
+# =========================
+# ROUTERS
+# =========================
 app.include_router(
     prescription_router,
     prefix="/prescription",
@@ -46,16 +54,20 @@ app.include_router(
     tags=["Hospitals"]
 )
 
-# ✅ Root Endpoint
+# =========================
+# ROOT
+# =========================
 @app.get("/")
 def home():
     return {
         "message": "Digital Prescription System Running",
         "status": "success",
-        "modules": ["prescription", "hospital"]
+        "base_url": BASE_URL
     }
 
-# ✅ Health Check (for deployment / monitoring)
+# =========================
+# HEALTH CHECK
+# =========================
 @app.get("/health")
 def health():
     return {
@@ -64,10 +76,13 @@ def health():
         "version": "1.1.0"
     }
 
-# ✅ Debug Endpoint (VERY USEFUL for testing)
+# =========================
+# DEBUG (VERY USEFUL)
+# =========================
 @app.get("/debug")
 def debug():
     return {
         "uploads_folder_exists": os.path.exists(UPLOAD_DIR),
-        "files_in_uploads": os.listdir(UPLOAD_DIR)
+        "files_in_uploads": os.listdir(UPLOAD_DIR),
+        "base_url": BASE_URL
     }
