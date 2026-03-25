@@ -138,24 +138,25 @@ function PrescriptionForm({ hospital }) {
     const downloadPDF = async () => {
         const doc = new jsPDF();
 
-        // 🩺 WATERMARK
-        doc.setTextColor(230);
-        doc.setFontSize(80);
-        doc.text(`${hospital.name}`, 20, 280, { angle: 45 });
-
-        // 🔁 Helper: Convert image to base64 (for logo reliability)
+        // 🔁 Helper: Convert image to base64 safely
         const getBase64FromUrl = async (url) => {
-            const data = await fetch(url);
-            const blob = await data.blob();
+            try {
+                const res = await fetch(url, { mode: "cors" });
+                const blob = await res.blob();
 
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(blob);
-                reader.onloadend = () => resolve(reader.result);
-            });
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            } catch (err) {
+                console.error("Base64 conversion failed:", err);
+                return null;
+            }
         };
 
-        let y = 40; // start AFTER header
+        let y = 40;
 
         // 🔵 HEADER
         doc.setFillColor(41, 128, 185);
@@ -172,17 +173,21 @@ function PrescriptionForm({ hospital }) {
         doc.text(hospital?.address || "", 10, 22);
         doc.text(hospital?.contact || "", 10, 27);
 
-        // 🖼️ LOGO
+        // 🖼️ LOGO (Robust)
         if (hospital?.logo_url) {
-            try {
-                const base64Logo = await getBase64FromUrl(hospital.logo_url);
+            const base64Logo = await getBase64FromUrl(hospital.logo_url);
 
-                doc.setFillColor(255, 255, 255);
-                doc.rect(155, 4, 50, 22, "F");
+            if (base64Logo) {
+                try {
+                    const format = base64Logo.includes("image/png") ? "PNG" : "JPEG";
 
-                doc.addImage(base64Logo, "PNG", 160, 5, 40, 20);
-            } catch (err) {
-                console.error("Logo failed:", err);
+                    doc.setFillColor(255, 255, 255);
+                    doc.rect(155, 4, 50, 22, "F");
+
+                    doc.addImage(base64Logo, format, 160, 5, 40, 20);
+                } catch (err) {
+                    console.error("Logo render failed:", err);
+                }
             }
         }
 
@@ -195,18 +200,14 @@ function PrescriptionForm({ hospital }) {
         // 🔲 PATIENT BOX
         doc.setDrawColor(180);
         doc.rect(10, y, 190, 30);
-
-        // vertical divider
         doc.line(105, y, 105, y + 30);
 
         doc.setFontSize(11);
 
-        // LEFT
         doc.text(`Patient: ${form.patient_name}`, 12, y + 8);
         doc.text(`Age/Sex: ${form.age} / ${form.sex}`, 12, y + 16);
         doc.text(`Weight: ${form.weight || "N/A"} kg`, 12, y + 24);
 
-        // RIGHT
         doc.text(`Doctor: ${form.doctor_name}`, 110, y + 8);
         doc.text(`Reg No: ${form.doctor_registration || "N/A"}`, 110, y + 16);
 
@@ -218,7 +219,6 @@ function PrescriptionForm({ hospital }) {
         y += 6;
 
         doc.setFont("Helvetica", "normal");
-
         const diagnosisLines = doc.splitTextToSize(form.diagnosis || "-", 180);
         doc.text(diagnosisLines, 10, y);
         y += diagnosisLines.length * 6 + 5;
@@ -227,7 +227,6 @@ function PrescriptionForm({ hospital }) {
         doc.setFont("Times", "bolditalic");
         doc.setFontSize(26);
         doc.text("℞", 10, y);
-
         y += 10;
 
         // 💊 MEDICATIONS
@@ -240,7 +239,6 @@ function PrescriptionForm({ hospital }) {
 
         form.medications.forEach((m, i) => {
             const line = `${i + 1}. ${m.name} ${m.strength} ${m.form} (${m.quantity})`;
-
             const wrapped = doc.splitTextToSize(line, 180);
             doc.text(wrapped, 15, y);
             y += wrapped.length * 6;
@@ -257,9 +255,7 @@ function PrescriptionForm({ hospital }) {
 
         Object.entries(form.directions).forEach(([k, v]) => {
             if (v) {
-                const text = `${k}: ${v}`;
-                const wrapped = doc.splitTextToSize(text, 180);
-
+                const wrapped = doc.splitTextToSize(`${k}: ${v}`, 180);
                 doc.text(wrapped, 12, y);
                 y += wrapped.length * 6;
             }
@@ -289,15 +285,14 @@ function PrescriptionForm({ hospital }) {
         doc.setDrawColor(0);
         doc.line(130, y, 190, y);
 
-        // Digital signature style
         doc.setFont("Times", "italic");
         doc.setFontSize(14);
         doc.setTextColor(50, 50, 150);
         doc.text(form.doctor_name || "Dr. Name", 132, y - 3);
 
         doc.setFontSize(10);
-        doc.setTextColor(130);
-        doc.text(`${form.doctor_name}`, 132, y - 10);
+        doc.setTextColor(120);
+        doc.text(`/s/ ${form.doctor_name}`, 132, y - 10);
 
         doc.setFont("Helvetica", "normal");
         doc.setTextColor(0);
@@ -306,6 +301,11 @@ function PrescriptionForm({ hospital }) {
 
         doc.setFontSize(9);
         doc.text(`Reg No: ${form.doctor_registration || "N/A"}`, 132, y + 10);
+
+        // 🩺 WATERMARK (LAST so it stays faint)
+        doc.setTextColor(230);
+        doc.setFontSize(70);
+        doc.text(hospital?.name || "Hospital", 30, 200, { angle: 45 });
 
         // 💾 SAVE
         doc.save(`${form.patient_name}-${prescriptionId}.pdf`);
