@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const API = axios.create({
-  baseURL: "http://127.0.0.1:8000",
+  baseURL: API_URL,
 });
 
 // ================= PRESCRIPTION =================
@@ -18,7 +20,6 @@ export const publishPrescription = (id) =>
 
 // ================= HOSPITAL =================
 
-// ✅ FIXED ENDPOINT + supports FormData
 export const createHospital = (formData) =>
   API.post("/hospital/", formData, {
     headers: {
