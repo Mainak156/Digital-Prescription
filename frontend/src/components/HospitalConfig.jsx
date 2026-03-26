@@ -4,15 +4,15 @@ import { createHospital } from "../services/api";
 function HospitalConfig({ setHospital }) {
   const [hospital, setLocalHospital] = useState({
     name: "",
-    logo_url: "",   // preview
-    logo_file: null, // actual file
+    logo_url: "",
+    logo_file: null,
     address: "",
     contact: ""
   });
 
   const [loading, setLoading] = useState(false);
 
-  // ✅ Handle text input
+  // ================= HANDLE INPUT =================
   const handleChange = (e) => {
     setLocalHospital({
       ...hospital,
@@ -20,7 +20,7 @@ function HospitalConfig({ setHospital }) {
     });
   };
 
-  // ✅ Handle logo upload
+  // ================= HANDLE LOGO =================
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -32,7 +32,7 @@ function HospitalConfig({ setHospital }) {
     });
   };
 
-  // ✅ Save hospital (FINAL FIXED)
+  // ================= SAVE =================
   const handleSave = async () => {
     try {
       if (!hospital.name || !hospital.address || !hospital.contact) {
@@ -57,22 +57,24 @@ function HospitalConfig({ setHospital }) {
 
       console.log("🔥 FULL RESPONSE:", res);
 
-      const responseData = res?.data;
-
-      if (!responseData || responseData.error) {
-        throw new Error(responseData?.error || "Failed to save hospital");
+      // ✅ FIXED: API already returns res.data
+      if (!res || res.error) {
+        throw new Error(res?.error || "Failed to save hospital");
       }
 
-      const saved = Array.isArray(responseData.data)
-        ? responseData.data[0]
-        : responseData.data;
+      const saved = Array.isArray(res.data)
+        ? res.data[0]
+        : res.data;
 
       if (!saved || !saved.id) {
-        throw new Error("❌ Hospital ID not returned from backend");
+        throw new Error("Hospital ID not returned from backend");
       }
 
-      // 🔥 CRITICAL LINE
+      // ✅ Save globally
       setHospital(saved);
+
+      // ✅ Persist
+      localStorage.setItem("hospital", JSON.stringify(saved));
 
       console.log("✅ SAVED HOSPITAL:", saved);
 
@@ -80,7 +82,7 @@ function HospitalConfig({ setHospital }) {
 
     } catch (err) {
       console.error("ERROR:", err);
-      alert(err.message);
+      alert(err.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -100,6 +102,7 @@ function HospitalConfig({ setHospital }) {
         onChange={handleChange}
       />
 
+      {/* ================= LOGO ================= */}
       <div className="mt-3">
         <label className="block text-sm font-medium mb-1">
           Hospital Logo

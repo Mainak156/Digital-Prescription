@@ -1,27 +1,47 @@
 import re
 
+
 def clean_ai_prescription(text: str) -> str:
     if not text:
         return ""
 
-    # 1. Remove markdown symbols
+    # ================= REMOVE MARKDOWN =================
     text = re.sub(r"[#*`\"_]", "", text)
 
-    # 2. Remove extra symbols but keep medical units
+    # ================= REMOVE WEIRD SYMBOLS =================
+    # Keep medical characters like mg, ml, /, ()
     text = re.sub(r"[^\w\s.,:/()-]", "", text)
 
-    # 3. Normalize spaces
+    # ================= NORMALIZE SPACES =================
     text = re.sub(r"\s+", " ", text)
 
-    # 4. Fix line breaks after sections
-    text = re.sub(r"(Patient Details|Doctor Details|Diagnosis|Medications|Directions|Additional Notes)", r"\n\n\1", text)
+    # ================= SECTION HEADINGS =================
+    sections = [
+        "Patient Details",
+        "Prescriber Details",
+        "Doctor Details",
+        "Clinical Information",
+        "Diagnosis",
+        "Medications",
+        "Directions",
+        "Refill Information",
+        "Special Notes",
+        "Additional Instructions"
+    ]
 
-    # 5. Clean bullet formatting
+    for sec in sections:
+        text = re.sub(fr"\b{sec}\b", f"\n\n{sec.upper()}", text, flags=re.IGNORECASE)
+
+    # ================= BULLET FORMATTING =================
     text = re.sub(r"\s*-\s*", "\n• ", text)
 
-    # 6. Capitalize sentences
+    # ================= CLEAN MULTIPLE LINE BREAKS =================
+    text = re.sub(r"\n{3,}", "\n\n", text)
+
+    # ================= SENTENCE FORMATTING =================
     sentences = text.split(". ")
     sentences = [s.strip().capitalize() for s in sentences if s.strip()]
     text = ". ".join(sentences)
 
+    # ================= FINAL CLEAN =================
     return text.strip()

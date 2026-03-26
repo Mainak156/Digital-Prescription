@@ -5,9 +5,9 @@ from datetime import datetime
 
 class Medication(BaseModel):
     name: str = Field(..., description="Generic drug name preferred")
-    strength: Optional[str] = Field(None, description="e.g., 500 mg")
-    form: Optional[str] = Field(None, description="tablet, syrup, etc.")
-    quantity: Optional[str] = Field(None, description="Total quantity prescribed")
+    strength: Optional[str] = None
+    form: Optional[str] = None
+    quantity: Optional[str] = None
 
 
 class Directions(BaseModel):
@@ -21,61 +21,55 @@ class Directions(BaseModel):
 class PrescriptionData(BaseModel):
     id: str
 
-    # 🔷 Patient Details
+    # 🔷 Patient
     patient_name: Optional[str] = None
     address: Optional[str] = None
     age: Optional[int] = None
     sex: Optional[str] = None
     weight: Optional[float] = None
 
-    # 🔷 Doctor Details
+    # 🔷 Doctor
     doctor_name: Optional[str] = None
     doctor_registration: Optional[str] = None
     doctor_contact: Optional[str] = None
 
-    # 🔷 Hospital Layer (NEW - IMPORTANT)
+    # 🔷 Hospital (JOINED DATA OPTIONAL)
     hospital_id: str
     hospital_name: Optional[str] = None
     hospital_address: Optional[str] = None
     hospital_contact: Optional[str] = None
     hospital_logo: Optional[str] = None
 
-    # 🔷 Clinical Information
+    # 🔷 Clinical
     diagnosis: Optional[str] = None
-    clinical_notes: Optional[str] = None
 
-    # 🔷 Core Prescription
+    # ❌ REMOVED direct clinical_notes (NOT IN DB)
+
+    # 🔷 AI GENERATED
     medications: Optional[List[Medication]] = None
     directions: Optional[Directions] = None
 
-    # 🔷 Safety Layer (NEW)
+    # 🔷 Safety
     refill_info: Optional[str] = None
     controlled_substance: Optional[bool] = False
-    warnings: Optional[List[str]] = None
 
     # 🔷 AI Layer
     ai_generated_text: Optional[str] = None
-    ai_cleaned_text: Optional[str] = None
-    ai_confidence_score: Optional[float] = None
 
-    # 🔷 Final Output Layer
+    # 🔷 Final
     final_prescription: Optional[str] = None
-    is_reviewed: Optional[bool] = False
-    reviewed_by: Optional[str] = None
 
-    # 🔷 Flexible Custom Fields (Multi-Institution Support)
+    # 🔷 Flexible (IMPORTANT)
     custom_fields: Optional[Dict[str, Any]] = None
 
-    # 🔷 Metadata (IMPORTANT FOR YOUR PROJECT)
+    # 🔷 Metadata
     status: Optional[str] = "draft"
-    version: Optional[int] = 1
-    source_institution: Optional[str] = None
 
     created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+
 
 class PrescriptionCreate(BaseModel):
-    # 🔥 REQUIRED FIELD (CRITICAL FIX)
+
     hospital_id: str
 
     # Patient
@@ -93,15 +87,15 @@ class PrescriptionCreate(BaseModel):
     # Clinical
     diagnosis: Optional[str] = None
 
-    # Core
-    medications: List[Medication]
-    directions: Directions
+    # ❌ REMOVE THESE FROM INPUT (AI will generate)
+    medications: Optional[List[Medication]] = None
+    directions: Optional[Directions] = None
 
     # Safety
     refill_info: Optional[str] = None
     controlled_substance: Optional[bool] = False
 
-    # Flexible
+    # 🔥 USE THIS FOR NOTES
     custom_fields: Optional[Dict[str, Any]] = None
 
 
@@ -114,5 +108,4 @@ class PrescriptionResponse(BaseModel):
 class AIResponse(BaseModel):
     message: str
     ai_text: Optional[str] = None
-    cleaned_text: Optional[str] = None
     error: Optional[str] = None
