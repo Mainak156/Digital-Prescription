@@ -186,6 +186,7 @@ function PrescriptionForm({ hospital }) {
                         const format = base64Logo.includes("image/png") ? "PNG" : "JPEG";
 
                         // White box behind logo
+                        doc.setGState(new doc.GState({opacity: 0.5}));
                         doc.setFillColor(255, 255, 255);
                         doc.rect(155, 4, 50, 22, "F");
 
