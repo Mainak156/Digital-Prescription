@@ -1,34 +1,62 @@
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// ✅ Use environment variable (MANDATORY for deployment)
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:8000";
 
+// ✅ Create Axios instance
 const API = axios.create({
   baseURL: API_URL,
-  timeout: 10000, // 🔥 prevent hanging requests
-  withCredentials: false, // 🔥 important for CORS
+  timeout: 10000,
+  withCredentials: false,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// 🔥 GLOBAL RESPONSE HANDLER
+// ================= 🔥 REQUEST INTERCEPTOR =================
+// (Useful later for auth tokens, hospital ID, etc.)
+API.interceptors.request.use(
+  (config) => {
+    // Example: attach token in future
+    // const token = localStorage.getItem("token");
+    // if (token) config.headers.Authorization = `Bearer ${token}`;
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// ================= 🔥 RESPONSE INTERCEPTOR =================
 API.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
       console.error("❌ API RESPONSE ERROR:", error.response.data);
-      return Promise.reject(error.response.data);
+
+      return Promise.reject({
+        status: error.response.status,
+        data: error.response.data,
+        message: error.response.data?.detail || "Server Error",
+      });
     } else if (error.request) {
       console.error("❌ NETWORK ERROR:", error.message);
-      return Promise.reject({ error: "Network Error: Backend not reachable" });
+
+      return Promise.reject({
+        message:
+          "Backend not reachable. Check deployment (Render/Server down)",
+      });
     } else {
       console.error("❌ UNKNOWN ERROR:", error.message);
-      return Promise.reject({ error: error.message });
+
+      return Promise.reject({
+        message: error.message,
+      });
     }
   }
 );
 
-// ================= PRESCRIPTION =================
+// ================= 🧠 PRESCRIPTION APIs =================
 
 export const createPrescription = async (data) => {
   const res = await API.post("/prescription/create", data);
@@ -45,7 +73,7 @@ export const publishPrescription = async (id) => {
   return res.data;
 };
 
-// ================= HOSPITAL =================
+// ================= 🏥 HOSPITAL APIs =================
 
 export const createHospital = async (formData) => {
   const res = await API.post("/hospital/", formData, {
@@ -58,6 +86,13 @@ export const createHospital = async (formData) => {
 
 export const getHospital = async (id) => {
   const res = await API.get(`/hospital/${id}`);
+  return res.data;
+};
+
+// ================= 🔥 HEALTH CHECK (VERY IMPORTANT) =================
+// Helps debug deployment in real-time
+export const healthCheck = async () => {
+  const res = await API.get("/");
   return res.data;
 };
 
