@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import PrescriptionForm from "./components/PrescriptionForm";
 import HospitalConfig from "./components/HospitalConfig";
 
@@ -88,6 +89,7 @@ function App() {
           </div>
         )}
       </div>
+      <Analytics />
     </div>
   );
 }
