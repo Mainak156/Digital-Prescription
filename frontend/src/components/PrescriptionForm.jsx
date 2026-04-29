@@ -306,8 +306,7 @@ function PrescriptionForm({ hospital }) {
 
             {stage === "create" && (
                 <div className="card w-full max-w-5xl">
-                    <h1 className="page-title">SmartRx AI</h1>
-                    <h3 className="page-title">A Doctor-in-the-loop Digitalized Prescription System</h3>
+                    <h1 className="page-title">Prescription Generator</h1>
 
                     <h2 className="section-title">Patient Details</h2>
                     <div className="grid grid-cols-2 gap-4">
